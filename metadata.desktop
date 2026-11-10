@@ -1,0 +1,9 @@
+[SddmGreeterTheme]
+Name=Xodo
+Description=Dark layered login with a large clock and a centered card
+Author=xodobyte
+License=MIT
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+QtVersion=6
