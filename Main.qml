@@ -6,16 +6,36 @@ Rectangle {
 
     width: 1366
     height: 768
-    color: "#07090d"
+    color: root.pageColor
 
-    readonly property color ink: "#eef1f7"
-    readonly property color muted: "#7f8ba0"
-    readonly property color panel: "#151a24"
-    readonly property color panelRaised: "#1d2331"
-    readonly property color edge: "#2a3244"
-    readonly property color accent: "#8fb3ff"
+    function hourSetting(value, fallback) {
+        var parsed = parseInt(value)
+        return isNaN(parsed) ? fallback : parsed
+    }
+
+    property int hour: new Date().getHours()
+    readonly property string modeSetting: (config.mode || "dark").toLowerCase()
+    readonly property int lightFrom: hourSetting(config.lightFrom, 7)
+    readonly property int darkFrom: hourSetting(config.darkFrom, 19)
+    readonly property bool daytime: lightFrom < darkFrom
+        ? (hour >= lightFrom && hour < darkFrom)
+        : (hour >= lightFrom || hour < darkFrom)
+    readonly property bool isLight: modeSetting === "light" || (modeSetting === "auto" && daytime)
+
+    readonly property color pageColor: isLight ? "#e3e8f1" : "#07090d"
+    readonly property color ink: isLight ? "#141a26" : "#eef1f7"
+    readonly property color muted: isLight ? "#566177" : "#7f8ba0"
+    readonly property color panel: isLight ? "#f1f4f9" : "#151a24"
+    readonly property color panelRaised: isLight ? "#fbfcfe" : "#1d2331"
+    readonly property color edge: isLight ? "#cbd3e1" : "#2a3244"
+    readonly property color accent: isLight ? "#2f5fc4" : "#8fb3ff"
+    readonly property color accentInk: isLight ? "#ffffff" : "#0b0f18"
+    readonly property color danger: isLight ? "#b3261e" : "#e67c7c"
+    readonly property real tintTop: isLight ? 0.86 : 0.784
+    readonly property real tintBottom: 0.96
     readonly property string fontName: config.font || "Adwaita Sans"
     readonly property string user: userModel.lastUser
+    readonly property string wallpaper: isLight && config.backgroundLight ? config.backgroundLight : config.background
 
     function attemptLogin() {
         status.text = ""
@@ -24,7 +44,7 @@ Rectangle {
 
     Image {
         anchors.fill: parent
-        source: config.background
+        source: root.wallpaper
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         cache: true
@@ -33,8 +53,8 @@ Rectangle {
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
-            GradientStop { position: 0.0; color: "#c807090d" }
-            GradientStop { position: 1.0; color: "#f507090d" }
+            GradientStop { position: 0.0; color: Qt.rgba(root.pageColor.r, root.pageColor.g, root.pageColor.b, root.tintTop) }
+            GradientStop { position: 1.0; color: Qt.rgba(root.pageColor.r, root.pageColor.g, root.pageColor.b, root.tintBottom) }
         }
     }
 
@@ -44,8 +64,10 @@ Rectangle {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            clock.text = Qt.formatTime(new Date(), "HH:mm")
-            dateLine.text = Qt.formatDate(new Date(), "dddd d MMMM")
+            var now = new Date()
+            root.hour = now.getHours()
+            clock.text = Qt.formatTime(now, "HH:mm")
+            dateLine.text = Qt.formatDate(now, "dddd d MMMM")
         }
     }
 
@@ -179,6 +201,15 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             model: sessionModel
             index: sessionModel.lastIndex
+            color: root.panelRaised
+            menuColor: root.panelRaised
+            textColor: root.ink
+            borderColor: root.edge
+            focusColor: root.accent
+            hoverColor: root.accent
+            arrowColor: root.panelRaised
+            font.family: root.fontName
+            font.pixelSize: 15
         }
 
         Rectangle {
@@ -197,13 +228,13 @@ Rectangle {
 
                 Icon {
                     kind: "login"
-                    strokeColor: "#0b0f18"
+                    strokeColor: root.accentInk
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
                 Text {
                     text: "Log in"
-                    color: "#0b0f18"
+                    color: root.accentInk
                     font.family: root.fontName
                     font.pixelSize: 16
                     font.weight: Font.DemiBold
@@ -224,7 +255,7 @@ Rectangle {
             anchors.top: loginButton.bottom
             anchors.topMargin: 12
             anchors.horizontalCenter: parent.horizontalCenter
-            color: "#e67c7c"
+            color: root.danger
             font.family: root.fontName
             font.pixelSize: 14
         }
